@@ -6,6 +6,28 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ray Tracing Exercise</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #output {
+            background: black;
+        }
+
+        #progress-indicator {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-family: Menlo, Consolas;
+        }
+    </style>
 </head>
 
 <body>
@@ -14,6 +36,16 @@
         <progress max="256" value="0"></progress>
         <span>0/256</span>
     </div>
+    <script>
+        const canvas = document.getElementById('output');
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(256, 256);
+        window.config = {
+            canvas,
+            ctx,
+            imageData,
+        };
+    </script>
     <script type="module" src="/src/main.ts"></script>
 </body>
 

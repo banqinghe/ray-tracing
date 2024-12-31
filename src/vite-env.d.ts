@@ -5,5 +5,7 @@ interface Window {
         canvas: HTMLCanvasElement;
         ctx: CanvasRenderingContext2D;
         imageData: ImageData;
+        imageWidth: number;
+        imageHeight: number;
     };
 }

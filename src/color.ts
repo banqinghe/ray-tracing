@@ -1,11 +1,10 @@
 import { Vec3 } from './vec3';
-import { width } from './constants';
 
 export class Color extends Vec3 {};
 
-const { imageData } = window.config;
-
 export function writeColor(i: number, j: number, pixelColor: Color) {
+    const { imageData, imageWidth: width } = window.config;
+
     const r = Math.floor(255.999 * pixelColor.x);
     const g = Math.floor(255.999 * pixelColor.y);
     const b = Math.floor(255.999 * pixelColor.z);

@@ -29,7 +29,7 @@ export class Vec3 {
         return new Vec3(this.e[0] + v.e[0], this.e[1] + v.e[1], this.e[2] + v.e[2]);
     }
 
-    minus(v: Vec3) {
+    subtract(v: Vec3) {
         return new Vec3(this.e[0] - v.e[0], this.e[1] - v.e[1], this.e[2] - v.e[2]);
     }
 
@@ -62,8 +62,8 @@ export function add(v1: Vec3, v2: Vec3) {
     return v1.add(v2);
 }
 
-export function minus(v1: Vec3, v2: Vec3) {
-    return v1.minus(v2);
+export function subtract(v1: Vec3, v2: Vec3) {
+    return v1.subtract(v2);
 }
 
 export function multiply(v: Vec3, t: number | Vec3) {

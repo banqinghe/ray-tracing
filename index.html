@@ -31,19 +31,16 @@
 </head>
 
 <body>
-    <canvas id="output" width="256" height="256"></canvas>
+    <canvas id="output"></canvas>
     <div id="progress-indicator">
-        <progress max="256" value="0"></progress>
-        <span>0/256</span>
+        <span>0/0</span>
     </div>
     <script>
         const canvas = document.getElementById('output');
         const ctx = canvas.getContext('2d');
-        const imageData = ctx.createImageData(256, 256);
         window.config = {
             canvas,
             ctx,
-            imageData,
         };
     </script>
     <script type="module" src="/src/main.ts"></script>

@@ -1,20 +1,41 @@
 import { Color, writeColor } from './color';
 import { Point3, Ray } from './ray';
-import { unitVector, Vec3 } from './vec3';
+import { dot, unitVector, Vec3 } from './vec3';
 
 function updateProgress(value: number, total: number) {
     const text = document.querySelector('#progress-indicator span') as HTMLSpanElement;
     text.innerText = `${value + 1}/${total}`;
 }
 
+// Ray-sphere intersection
+// (C - P(t)) · (C - P(t)) = r²
+// (C - (Q + td)) · (C - (Q + td)) = r²
+// t = (-b ± √(b² - 4ac)) / 2a
+//   a = d · d
+//   b = -2d · (C - Q)
+//   c = (C - Q) · (C - Q) - r²
+function hitSphere(center: Point3, radius: number, r: Ray) {
+    const oc = r.origin.subtract(center); // C - Q
+    const a = dot(r.direction, r.direction);
+    const b = -2 * dot(oc, r.direction);
+    const c = dot(oc, oc) - radius * radius;
+    const discriminant = b * b - 4 * a * c;
+    return discriminant > 0;
+}
+
 function rayColor(r: Ray) {
+    // if hit a sphere at (0, 0, -1) with radius 0.5, return red
+    if (hitSphere(new Point3(0, 0, -1), 0.5, r)) {
+        return new Color(1, 0, 0);
+    }
+
     const unitDirection = unitVector(r.direction);
     const a = 0.5 * (unitDirection.y + 1);
     return new Color(1, 1, 1).multiply(1 - a)
         .add(new Color(0.5, 0.7, 1).multiply(a));
 }
 
-async function main() {
+function main() {
     // Image
 
     const aspectRadio = 16 / 9;
@@ -27,6 +48,7 @@ async function main() {
     const { canvas, ctx } = window.config;
     canvas.width = imageWidth;
     canvas.height = imageHeight;
+    canvas.style.display = 'block';
     const imageData = ctx.createImageData(imageWidth, imageHeight);
     window.config.imageData = imageData;
     window.config.imageWidth = imageWidth;

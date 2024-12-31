@@ -45,6 +45,18 @@ export class Vec3 {
         return this.multiply(1 / t);
     }
 
+    dot(v: Vec3) {
+        return this.e[0] * v.e[0] + this.e[1] * v.e[1] + this.e[2] * v.e[2];
+    }
+
+    cross(v: Vec3) {
+        return new Vec3(
+            this.e[1] * v.e[2] - this.e[2] * v.e[1],
+            this.e[2] * v.e[0] - this.e[0] * v.e[2],
+            this.e[0] * v.e[1] - this.e[1] * v.e[0],
+        );
+    }
+
     length() {
         return Math.sqrt(this.lengthSquared());
     }
@@ -75,15 +87,11 @@ export function divide(v: Vec3, t: number) {
 }
 
 export function dot(v1: Vec3, v2: Vec3) {
-    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+    return v1.dot(v2);
 }
 
 export function cross(v1: Vec3, v2: Vec3) {
-    return new Vec3(
-        v1.y * v2.z - v1.z * v2.y,
-        v1.z * v2.x - v1.x * v2.z,
-        v1.x * v2.y - v1.y * v2.x,
-    );
+    return v1.cross(v2);
 }
 
 export function unitVector(v: Vec3) {

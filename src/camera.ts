@@ -42,11 +42,21 @@ export class Camera {
                 const ray = new Ray(this.center, rayDirection);
 
                 const pixelColor = this.rayColor(ray, world);
-                writeColor(i, j, pixelColor);
+                writeColor({ i, j, pixelColor, imageData: this.imageData, imageWidth: this.imageWidth });
             }
         }
 
         this.ctx.putImageData(this.imageData, 0, 0);
+    }
+
+    private initializeCanvas() {
+        const canvas = document.getElementById('output') as HTMLCanvasElement;
+        canvas.width = this.imageWidth;
+        canvas.height = this.imageHeight;
+        canvas.style.display = 'block';
+
+        this.ctx = canvas.getContext('2d')!;
+        this.imageData = this.ctx.createImageData(this.imageWidth, this.imageHeight);
     }
 
     private initialize() {
@@ -54,16 +64,7 @@ export class Camera {
         // (imageWidth and imageHeight are both integers, as in the C++ code, so we need to use Math.max)
         this.imageHeight = Math.max(this.imageWidth / this.aspectRadio, 1);
 
-        const { canvas, ctx } = window.config;
-        canvas.width = this.imageWidth;
-        canvas.height = this.imageHeight;
-        canvas.style.display = 'block';
-        const imageData = ctx.createImageData(this.imageWidth, this.imageHeight);
-        window.config.imageData = imageData;
-        window.config.imageWidth = this.imageWidth;
-        window.config.imageHeight = this.imageHeight;
-        this.ctx = ctx;
-        this.imageData = imageData;
+        this.initializeCanvas();
 
         this.center = new Point3(0, 0, 0);
 

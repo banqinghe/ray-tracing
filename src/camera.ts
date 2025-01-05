@@ -2,7 +2,8 @@ import { Color, writeColor } from './color';
 import { HitRecord, Hittable } from './hittable';
 import { Interval } from './interval';
 import { Point3, Ray } from './ray';
-import { add, unitVector, Vec3 } from './vec3';
+import { random } from './utils';
+import { add, multiply, subtract, unitVector, Vec3 } from './vec3';
 
 export class Camera {
     /** radio of image width over height */
@@ -11,8 +12,14 @@ export class Camera {
     /** rendered image width */
     imageWidth = 100;
 
+    /** count of random samples for each pixel */
+    samplesPerPixel = 10;
+
     /** rendered image height */
     private imageHeight!: number;
+
+    /** color scale factor for a sum of pixel samples */
+    private pixelSamplesScale!: number;
 
     /** camera center */
     private center!: Point3;
@@ -35,14 +42,20 @@ export class Camera {
         for (let j = 0; j < this.imageHeight; j++) {
             this.updateProgress(j, this.imageHeight);
             for (let i = 0; i < this.imageWidth; i++) {
-                const pixelCenter = this.pixel00Location
-                    .add(this.pixelDeltaU.multiply(i))
-                    .add(this.pixelDeltaV.multiply(j));
-                const rayDirection = pixelCenter.subtract(this.center);
-                const ray = new Ray(this.center, rayDirection);
+                let pixelColor = new Color(0, 0, 0);
 
-                const pixelColor = this.rayColor(ray, world);
-                writeColor({ i, j, pixelColor, imageData: this.imageData, imageWidth: this.imageWidth });
+                for (let sample = 0; sample < this.samplesPerPixel; sample++) {
+                    const ray = this.getRay(i, j);
+                    pixelColor = add(pixelColor, this.rayColor(ray, world));
+                }
+
+                writeColor({
+                    i,
+                    j,
+                    pixelColor: multiply(pixelColor, this.pixelSamplesScale),
+                    imageData: this.imageData,
+                    imageWidth: this.imageWidth,
+                });
             }
         }
 
@@ -63,6 +76,8 @@ export class Camera {
         // calculate the image height, and ensure that it's at least 1
         // (imageWidth and imageHeight are both integers, as in the C++ code, so we need to use Math.max)
         this.imageHeight = Math.max(this.imageWidth / this.aspectRadio, 1);
+
+        this.pixelSamplesScale = 1 / this.samplesPerPixel;
 
         this.initializeCanvas();
 
@@ -90,6 +105,26 @@ export class Camera {
         this.pixel00Location = viewportUpperLeft.add(
             this.pixelDeltaU.add(this.pixelDeltaV).multiply(0.5),
         );
+    }
+
+    /**
+     * construct a camera ray originating from the origin and directed at randomly sampled
+     * point around then pixel location i, j
+     */
+    private getRay(i: number, j: number): Ray {
+        const offset = this.sampleSquare();
+        const pixelSample = this.pixel00Location
+            .add(multiply(this.pixelDeltaU, i + offset.x))
+            .add(multiply(this.pixelDeltaV, j + offset.y));
+
+        const rayOrigin = this.center;
+        const rayDirection = subtract(pixelSample, rayOrigin);
+        return new Ray(rayOrigin, rayDirection);
+    }
+
+    /** returns the vector to a random point in the square [-0.5, -0.5] - [+0.5, +0.5] unit square */
+    private sampleSquare(): Vec3 {
+        return new Vec3(random() - 0.5, random() - 0.5, 0);
     }
 
     private rayColor(ray: Ray, world: Hittable): Color {

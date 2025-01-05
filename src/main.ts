@@ -13,6 +13,7 @@ function main() {
 
     camera.aspectRadio = 16 / 9;
     camera.imageWidth = 400;
+    camera.samplesPerPixel = 100;
 
     camera.render(world);
 }

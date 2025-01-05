@@ -52,6 +52,7 @@ export class Sphere implements Hittable {
         const sqrtd = Math.sqrt(discriminant);
 
         // find the root ∈ (rayTmin, rayTmax)
+        // when repeatedly calling hit on multiple spheres, this operation allows us to always obtain, the minimum interval
         let root = (h - sqrtd) / a;
         if (!interval.surrounds(root)) {
             root = (h + sqrtd) / a;

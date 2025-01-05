@@ -1,13 +1,21 @@
 import { HitRecord, Hittable } from './hittable';
 import { Interval } from './interval';
 import { Ray } from './ray';
+import { Sphere } from './sphere';
+import { PlainObject } from './utils';
 
 export class HittableList extends Hittable {
+    type = 'HittableList';
+
     objects: Hittable[];
 
-    constructor(object?: Hittable) {
+    constructor(object?: Hittable | Hittable[]) {
         super();
-        this.objects = object ? [object] : [];
+        if (Array.isArray(object)) {
+            this.objects = [...object];
+        } else {
+            this.objects = object ? [object] : [];
+        }
     }
 
     clear() {
@@ -33,5 +41,15 @@ export class HittableList extends Hittable {
         }
 
         return hitAnything;
+    }
+
+    static fromPlainObject(json: PlainObject<HittableList>) {
+        const parsedObjects = [];
+        for (const object of json.objects) {
+            if (object.type === 'Sphere') {
+                parsedObjects.push(Sphere.fromPlainObject(object as Sphere));
+            }
+        }
+        return new HittableList(parsedObjects);
     }
 }

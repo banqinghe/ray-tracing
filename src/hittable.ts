@@ -36,5 +36,6 @@ export class HitRecord {
 }
 
 export abstract class Hittable {
+    type = 'Hittable';
     abstract hit(r: Ray, interval: Interval, rec: HitRecord): boolean;
 }

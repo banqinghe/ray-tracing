@@ -24,10 +24,19 @@ export interface WorkerMessageData {
 function initializeMessageData(data: WorkerMessageData) {
     return {
         ...data,
+
+        /** camera center */
         center: new Point3(data.center.e[0], data.center.e[1], data.center.e[2]),
+
+        /** location of pixel 0, 0 */
         pixel00Location: new Point3(data.pixel00Location.e[0], data.pixel00Location.e[1], data.pixel00Location.e[2]),
+
+        /** offset to pixel to the right */
         pixelDeltaU: new Vec3(data.pixelDeltaU.e[0], data.pixelDeltaU.e[1], data.pixelDeltaU.e[2]),
+
+        /** offset to pixel below */
         pixelDeltaV: new Vec3(data.pixelDeltaV.e[0], data.pixelDeltaV.e[1], data.pixelDeltaV.e[2]),
+
         world: HittableList.fromPlainObject(data.world),
     };
 }

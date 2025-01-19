@@ -1,3 +1,5 @@
+import { random } from './utils';
+
 export class Vec3 {
     e: [number, number, number];
 
@@ -67,6 +69,10 @@ export class Vec3 {
 
     get [Symbol.toStringTag]() {
         return 'Vec3';
+    }
+
+    static random(min?: number, max?: number) {
+        return new Vec3(random(min, max), random(min, max), random(min, max));
     }
 }
 

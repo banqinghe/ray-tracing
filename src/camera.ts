@@ -1,6 +1,6 @@
 import { HitRecord, Hittable } from './hittable';
 import { Point3, Ray } from './ray';
-import { add, cross, multiply, subtract, unitVector, Vec3 } from './vec3';
+import { add, cross, multiply, randomInUnitDisk, subtract, unitVector, Vec3 } from './vec3';
 import { Color, writeColor } from './color';
 import { Interval } from './interval';
 import { degreesToRadians } from './utils';
@@ -15,6 +15,8 @@ export interface CameraConfig {
     lookFrom: [number, number, number];
     lookAt: [number, number, number];
     vup: [number, number, number];
+    defocusAngle: number;
+    focusDistance: number;
 }
 
 export class Camera {
@@ -45,6 +47,12 @@ export class Camera {
     /** camera-relative "up" direction */
     vup: Vec3;
 
+    /** the angle of the cone with apex at viewport center and base (defocus disk) at the camera center */
+    defocusAngle: number;
+
+    /** distance from camera lookFrom to plane of perfect focus */
+    focusDistance: number;
+
     /** color scale factor for a sum of pixel samples */
     private pixelSamplesScale: number;
 
@@ -69,26 +77,33 @@ export class Camera {
     /** orthonormal basis forward - w */
     private w: Vec3;
 
+    /** defocus disk horizontal radius */
+    private defocusDiskU: Vec3;
+
+    /** defocus disk vertical radius */
+    private defocusDiskV: Vec3;
+
     constructor(config: CameraConfig) {
-        const { imageWidth, imageHeight, aspectRadio, samplesPerPixel, maxDepth, vFov } = config;
-        this.imageWidth = imageWidth;
-        this.imageHeight = imageHeight;
-        this.aspectRadio = aspectRadio;
-        this.samplesPerPixel = samplesPerPixel;
-        this.pixelSamplesScale = 1 / samplesPerPixel;
-        this.maxDepth = maxDepth;
-        this.vFov = vFov;
+        this.imageWidth = config.imageWidth;
+        this.imageHeight = config.imageHeight;
+        this.aspectRadio = config.aspectRadio;
+        this.samplesPerPixel = config.samplesPerPixel;
+        this.pixelSamplesScale = 1 / config.samplesPerPixel;
+        this.maxDepth = config.maxDepth;
+        this.vFov = config.vFov;
         this.lookFrom = new Point3(...config.lookFrom);
         this.lookAt = new Point3(...config.lookAt);
         this.vup = new Vec3(...config.vup);
+        this.defocusAngle = config.defocusAngle;
+        this.focusDistance = config.focusDistance;
 
         this.center = this.lookFrom;
 
         // determine viewport dimensions
-        const focalLength = subtract(this.lookFrom, this.lookAt).length();
-        const theta = degreesToRadians(vFov);
+        // const focalLength = subtract(this.lookFrom, this.lookAt).length();
+        const theta = degreesToRadians(this.vFov);
         const halfViewHeight = Math.tan(theta / 2);
-        const viewportHeight = 2 * halfViewHeight * focalLength;
+        const viewportHeight = 2 * halfViewHeight * this.focusDistance;
         const viewportWidth = viewportHeight * (this.imageWidth / this.imageHeight);
 
         // calculate the u,v,w unit basis
@@ -106,13 +121,18 @@ export class Camera {
 
         // calculate the location of the upper left pixel
         const viewportUpperLeft = this.center
-            .subtract(this.w.multiply(focalLength))
+            .subtract(this.w.multiply(this.focusDistance))
             .subtract(viewportU.divide(2))
             .subtract(viewportV.divide(2));
         // center of the upper left pixel
         this.pixel00Location = viewportUpperLeft.add(
             this.pixelDeltaU.add(this.pixelDeltaV).multiply(0.5),
         );
+
+        // calculate the camera defocus disk basis vectors
+        const defocusRadius = this.focusDistance * Math.tan(degreesToRadians(this.defocusAngle) / 2);
+        this.defocusDiskU = this.u.multiply(defocusRadius);
+        this.defocusDiskV = this.v.multiply(defocusRadius);
     }
 
     render(world: Hittable) {
@@ -179,12 +199,26 @@ export class Camera {
     }
 
     getRay(i: number, j: number): Ray {
+        // construct a camera ray originating from the defocus disk and directed at a randomly
+        // sampled point around the pixel location i, j
+
         const offset = this.sampleSquare();
         const pixelSample = this.pixel00Location
             .add(multiply(this.pixelDeltaU, i + offset.x))
             .add(multiply(this.pixelDeltaV, j + offset.y));
-        const rayOrigin = this.center;
+        const rayOrigin = this.defocusAngle <= 0 ? this.center : this.defocusDiskSample();
         const rayDirection = subtract(pixelSample, rayOrigin);
         return new Ray(rayOrigin, rayDirection);
+    }
+
+    /** sample a point on the defocus disk */
+    defocusDiskSample(): Point3 {
+        const p = randomInUnitDisk();
+        return this.center.add(
+            add(
+                this.defocusDiskU.multiply(p.x),
+                this.defocusDiskV.multiply(p.y),
+            ),
+        );
     }
 }

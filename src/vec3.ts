@@ -110,6 +110,16 @@ export function unitVector(v: Vec3) {
     return v.divide(v.length());
 }
 
+/** generate a random unit vector on a plane */
+export function randomInUnitDisk(): Vec3 {
+    while (true) {
+        const p = new Vec3(random(-1, 1), random(-1, 1), 0);
+        if (p.lengthSquared() < 1) {
+            return p;
+        }
+    }
+}
+
 /** generate a random unitVector of a unit sphere  */
 export function randomUnitVector(): Vec3 {
     while (true) {

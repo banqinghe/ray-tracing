@@ -1,6 +1,6 @@
 import { HitRecord, Hittable } from './hittable';
 import { Point3, Ray } from './ray';
-import { add, multiply, randomUnitVector, subtract, unitVector, Vec3 } from './vec3';
+import { add, multiply, subtract, unitVector, Vec3 } from './vec3';
 import { Color, writeColor } from './color';
 import { Interval } from './interval';
 

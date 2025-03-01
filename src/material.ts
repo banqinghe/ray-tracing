@@ -1,17 +1,17 @@
 import { Color } from './color';
 import { HitRecord } from './hittable';
 import { Ray } from './ray';
-import { randomUnitVector, reflect } from './vec3';
+import { dot, randomUnitVector, reflect, unitVector } from './vec3';
 
 export abstract class Material {
     abstract scatter(rayIn: Ray, hitRecord: HitRecord, attenuation: Color, scattered: Ray): boolean;
 
-    static create(type: string, color: Color): Material {
+    static create(type: string, color: Color, fuzz?: number): Material {
         switch (type) {
             case 'lambertian':
                 return new Lambertian(color);
             case 'metal':
-                return new Metal(color);
+                return new Metal(color, fuzz);
             default:
                 throw new Error(`Unknown material type: ${type}`);
         }
@@ -43,16 +43,21 @@ export class Lambertian extends Material {
 
 export class Metal extends Material {
     private albedo: Color;
+    private fuzz: number;
 
-    constructor(albedo: Color) {
+    constructor(albedo: Color, fuzz = 1) {
         super();
         this.albedo = albedo;
+        this.fuzz = Math.min(fuzz, 1);
     }
 
     scatter(rayIn: Ray, hitRecord: HitRecord, attenuation: Color, scattered: Ray): boolean {
-        const reflected = reflect(rayIn.direction, hitRecord.normal);
+        // if there's no unitVector, the length of the incident light will also affect the
+        // calculation results, but we only want fuzz to be the sole factor.
+        const reflected = unitVector(reflect(rayIn.direction, hitRecord.normal))
+            .add(randomUnitVector().multiply(this.fuzz));
         Object.assign(scattered, new Ray(hitRecord.p, reflected));
         Object.assign(attenuation, this.albedo);
-        return true;
+        return dot(scattered.direction, hitRecord.normal) > 0;
     }
 }

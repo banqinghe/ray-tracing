@@ -6,6 +6,7 @@ export interface SphereConfig {
     radius: number;
     material: Material;
     color: [number, number, number];
+    fuzz?: number;
 }
 
 export type ShapeConfig = SphereConfig;

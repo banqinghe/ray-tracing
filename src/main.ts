@@ -51,18 +51,20 @@ function main() {
         // left sphere
         {
             type: 'sphere',
-            center: [1, 0, -1],
-            radius: 0.5,
-            material: 'metal',
-            color: [0.8, 0.8, 0.8],
-        },
-        // right sphere
-        {
-            type: 'sphere',
             center: [-1, 0, -1],
             radius: 0.5,
             material: 'metal',
             color: [0.8, 0.6, 0.2],
+            fuzz: 0.7,
+        },
+        // right sphere
+        {
+            type: 'sphere',
+            center: [1, 0, -1],
+            radius: 0.5,
+            material: 'metal',
+            color: [0.8, 0.8, 0.8],
+            fuzz: 0,
         },
     ];
 

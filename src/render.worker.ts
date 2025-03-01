@@ -22,7 +22,7 @@ self.onmessage = function (event: MessageEvent<WorkerMessageData>) {
             world.add(new Sphere(
                 new Point3(...shape.center),
                 shape.radius,
-                Material.create(shape.material, new Color(...shape.color)),
+                Material.create(shape.material, new Color(...shape.color), shape.fuzz),
             ));
         }
     }

@@ -103,3 +103,25 @@ export function cross(v1: Vec3, v2: Vec3) {
 export function unitVector(v: Vec3) {
     return v.divide(v.length());
 }
+
+/** generate a random unitVector of a unit sphere  */
+export function randomUnitVector(): Vec3 {
+    while (true) {
+        const p = Vec3.random(-1, 1);
+        const lengthSquared = p.lengthSquared();
+        // avoid division by zero, javascript number is 64-bit double, so 1e-160 is a good threshold
+        if (lengthSquared > 1e-160 && lengthSquared <= 1) {
+            return p.divide(Math.sqrt(lengthSquared));
+        }
+    }
+}
+
+/** generate a random unitVector of a unit sphere, but only in the hemisphere of the normal */
+export function randomOnHemisphere(normal: Vec3) {
+    const onUnitSphere = randomUnitVector();
+    if (dot(onUnitSphere, normal) > 0.0) {
+        return onUnitSphere;
+    } else {
+        return onUnitSphere.multiply(-1);
+    }
+}

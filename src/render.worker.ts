@@ -7,7 +7,7 @@ import { SceneConfig } from './scene';
 import { Sphere } from './sphere';
 
 export interface WorkerMessageData {
-    camera: CameraConfig & { imageHeight: number };
+    camera: CameraConfig;
     scene: SceneConfig;
 }
 

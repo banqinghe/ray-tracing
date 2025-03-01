@@ -1,13 +1,15 @@
 import { HitRecord, Hittable } from './hittable';
 import { Point3, Ray } from './ray';
-import { add, multiply, subtract, unitVector, Vec3 } from './vec3';
+import { add, multiply, randomOnHemisphere, randomUnitVector, subtract, unitVector, Vec3 } from './vec3';
 import { Color, writeColor } from './color';
 import { Interval } from './interval';
 
 export interface CameraConfig {
     aspectRadio: number;
     imageWidth: number;
+    imageHeight: number;
     samplesPerPixel: number;
+    maxDepth: number;
 }
 
 export class Camera {
@@ -22,6 +24,9 @@ export class Camera {
 
     /** count of random samples for each pixel */
     samplesPerPixel: number;
+
+    /** maximum number of ray bounces into scene */
+    maxDepth: number;
 
     /** color scale factor for a sum of pixel samples */
     private pixelSamplesScale: number;
@@ -38,13 +43,14 @@ export class Camera {
     /** offset to pixel below */
     private pixelDeltaV: Vec3;
 
-    constructor(config: CameraConfig & { imageHeight: number }) {
-        const { imageWidth, imageHeight, aspectRadio, samplesPerPixel } = config;
+    constructor(config: CameraConfig) {
+        const { imageWidth, imageHeight, aspectRadio, samplesPerPixel, maxDepth } = config;
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
         this.aspectRadio = aspectRadio;
         this.samplesPerPixel = samplesPerPixel;
         this.pixelSamplesScale = 1 / samplesPerPixel;
+        this.maxDepth = maxDepth;
 
         this.center = new Point3(0, 0, 0);
 
@@ -83,7 +89,7 @@ export class Camera {
 
                 for (let sample = 0; sample < this.samplesPerPixel; sample++) {
                     const ray = this.getRay(i, j);
-                    pixelColor = add(pixelColor, this.rayColor(ray, world));
+                    pixelColor = add(pixelColor, this.rayColor(ray, this.maxDepth, world));
                 }
 
                 writeColor({
@@ -103,11 +109,23 @@ export class Camera {
         }
     }
 
-    rayColor(ray: Ray, world: Hittable): Color {
+    rayColor(ray: Ray, depth: number, world: Hittable): Color {
         const hitRecord = new HitRecord();
 
-        if (world.hit(ray, new Interval(0, Infinity), hitRecord)) {
-            return add(hitRecord.normal, new Color(1, 1, 1)).multiply(0.5);
+        // prevent hit calculations after exceeding maxDepth times, directly return black
+        if (depth <= 0) {
+            return new Color(0, 0, 0);
+        }
+
+        // The origin interval is [0.001, Infinity) but [0, Infinity). This is because there will be errors
+        // when calculating the intersection points, which may cause the starting point of the reflected light
+        // to be inside the object, and this beam of light will hit the object again from within, resulting
+        // in a darker color at the intersection point than expected.
+        if (world.hit(ray, new Interval(0.001, Infinity), hitRecord)) {
+            // const direction = randomOnHemisphere(hitRecord.normal);
+            const direction = hitRecord.normal.add(randomUnitVector());
+            // the original color is the background color, and each hit will cause the color to fade to half of its original value
+            return this.rayColor(new Ray(hitRecord.p, direction), depth - 1, world).multiply(0.5);
         }
 
         // background

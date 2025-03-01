@@ -1,8 +1,9 @@
 import { HitRecord, Hittable } from './hittable';
 import { Point3, Ray } from './ray';
-import { add, multiply, subtract, unitVector, Vec3 } from './vec3';
+import { add, cross, multiply, subtract, unitVector, Vec3 } from './vec3';
 import { Color, writeColor } from './color';
 import { Interval } from './interval';
+import { degreesToRadians } from './utils';
 
 export interface CameraConfig {
     aspectRadio: number;
@@ -10,6 +11,10 @@ export interface CameraConfig {
     imageHeight: number;
     samplesPerPixel: number;
     maxDepth: number;
+    vFov: number;
+    lookFrom: [number, number, number];
+    lookAt: [number, number, number];
+    vup: [number, number, number];
 }
 
 export class Camera {
@@ -28,6 +33,18 @@ export class Camera {
     /** maximum number of ray bounces into scene */
     maxDepth: number;
 
+    /** vertical field of view */
+    vFov: number;
+
+    /** point camera is looking from */
+    lookFrom: Point3;
+
+    /** point camera is looking at */
+    lookAt: Point3;
+
+    /** camera-relative "up" direction */
+    vup: Vec3;
+
     /** color scale factor for a sum of pixel samples */
     private pixelSamplesScale: number;
 
@@ -43,25 +60,45 @@ export class Camera {
     /** offset to pixel below */
     private pixelDeltaV: Vec3;
 
+    /** orthonormal basis right - u */
+    private u: Vec3;
+
+    /** orthonormal basis up - v */
+    private v: Vec3;
+
+    /** orthonormal basis forward - w */
+    private w: Vec3;
+
     constructor(config: CameraConfig) {
-        const { imageWidth, imageHeight, aspectRadio, samplesPerPixel, maxDepth } = config;
+        const { imageWidth, imageHeight, aspectRadio, samplesPerPixel, maxDepth, vFov } = config;
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
         this.aspectRadio = aspectRadio;
         this.samplesPerPixel = samplesPerPixel;
         this.pixelSamplesScale = 1 / samplesPerPixel;
         this.maxDepth = maxDepth;
+        this.vFov = vFov;
+        this.lookFrom = new Point3(...config.lookFrom);
+        this.lookAt = new Point3(...config.lookAt);
+        this.vup = new Vec3(...config.vup);
 
-        this.center = new Point3(0, 0, 0);
+        this.center = this.lookFrom;
 
-        // determine viewport dimensions.
-        const focalLength = 1.0;
-        const viewportHeight = 2.0;
+        // determine viewport dimensions
+        const focalLength = subtract(this.lookFrom, this.lookAt).length();
+        const theta = degreesToRadians(vFov);
+        const halfViewHeight = Math.tan(theta / 2);
+        const viewportHeight = 2 * halfViewHeight * focalLength;
         const viewportWidth = viewportHeight * (this.imageWidth / this.imageHeight);
 
+        // calculate the u,v,w unit basis
+        this.w = unitVector(subtract(this.lookFrom, this.lookAt));
+        this.u = unitVector(cross(this.vup, this.w));
+        this.v = cross(this.w, this.u);
+
         // calculate the vectors across the horizontal and down the vertical viewport edges
-        const viewportU = new Vec3(viewportWidth, 0, 0);
-        const viewportV = new Vec3(0, -viewportHeight, 0);
+        const viewportU = this.u.multiply(viewportWidth);
+        const viewportV = this.v.negate().multiply(viewportHeight);
 
         // calculate then horizontal and vertical delta vectors from pixel to pixel
         this.pixelDeltaU = viewportU.divide(this.imageWidth);
@@ -69,7 +106,7 @@ export class Camera {
 
         // calculate the location of the upper left pixel
         const viewportUpperLeft = this.center
-            .subtract(new Vec3(0, 0, focalLength))
+            .subtract(this.w.multiply(focalLength))
             .subtract(viewportU.divide(2))
             .subtract(viewportV.divide(2));
         // center of the upper left pixel

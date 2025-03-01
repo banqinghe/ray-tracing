@@ -29,6 +29,10 @@ function main() {
         imageHeight: Math.max(400 / (16 / 9), 1),
         samplesPerPixel: 100,
         maxDepth: 50,
+        vFov: 20,
+        lookFrom: [-2, 2, 1],
+        lookAt: [0, 0, -1],
+        vup: [0, 1, 0],
     };
 
     const sceneConfig: SceneConfig = [

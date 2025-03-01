@@ -53,9 +53,16 @@ function main() {
             type: 'sphere',
             center: [-1, 0, -1],
             radius: 0.5,
-            material: 'metal',
-            color: [0.8, 0.6, 0.2],
-            fuzz: 0.7,
+            material: 'dielectric',
+            refractionIndex: 1.5,
+        },
+        // left bubble sphere
+        {
+            type: 'sphere',
+            center: [-1, 0, -1],
+            radius: 0.4,
+            material: 'dielectric',
+            refractionIndex: 1 / 1.5,
         },
         // right sphere
         {

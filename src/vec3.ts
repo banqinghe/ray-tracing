@@ -132,6 +132,25 @@ export function randomOnHemisphere(normal: Vec3) {
     }
 }
 
+/**
+ * reflect a vector around a normal
+ * @param v the incident vector
+ * @param n the normal of the surface
+ */
 export function reflect(v: Vec3, n: Vec3) {
     return subtract(v, multiply(n, 2 * dot(v, n)));
+}
+
+/**
+ * refract a vector through a surface
+ * @param uv the incident vector
+ * @param n the normal of the surface
+ * @param etaInOverEtaOut 𝜂/𝜂′ the ratio of the indices of refraction
+ */
+export function refract(uv: Vec3, n: Vec3, etaInOverEtaOut: number) {
+    // due to precision issues, use Math.min() to avoid calculation results slightly greater than 1
+    const cosTheta = Math.min(dot(uv.negate(), n), 1);
+    const rOutPerpendicular = n.multiply(cosTheta).add(uv).multiply(etaInOverEtaOut);
+    const rOutParallel = n.multiply(-Math.sqrt(Math.abs(1 - rOutPerpendicular.lengthSquared())));
+    return add(rOutPerpendicular, rOutParallel);
 }

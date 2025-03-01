@@ -1,7 +1,6 @@
 /// <reference lib="webworker" />
 
 import { Camera, CameraConfig } from './camera';
-import { Color } from './color';
 import { HittableList } from './hittable-list';
 import { Material } from './material';
 import { Point3 } from './ray';
@@ -22,7 +21,14 @@ self.onmessage = function (event: MessageEvent<WorkerMessageData>) {
             world.add(new Sphere(
                 new Point3(...shape.center),
                 shape.radius,
-                Material.create(shape.material, new Color(...shape.color), shape.fuzz),
+                Material.create(
+                    shape.material,
+                    {
+                        color: shape.color,
+                        fuzz: shape.fuzz,
+                        refractionIndex: shape.refractionIndex,
+                    },
+                ),
             ));
         }
     }

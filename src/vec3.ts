@@ -67,6 +67,12 @@ export class Vec3 {
         return this.e[0] * this.e[0] + this.e[1] * this.e[1] + this.e[2] * this.e[2];
     }
 
+    /** return true if the vector is close to zero in all dimensions */
+    nearZero(): boolean {
+        const s = 1e-8;
+        return Math.abs(this.e[0]) < s && Math.abs(this.e[1]) < s && Math.abs(this.e[2]) < s;
+    }
+
     get [Symbol.toStringTag]() {
         return 'Vec3';
     }
@@ -124,4 +130,8 @@ export function randomOnHemisphere(normal: Vec3) {
     } else {
         return onUnitSphere.multiply(-1);
     }
+}
+
+export function reflect(v: Vec3, n: Vec3) {
+    return subtract(v, multiply(n, 2 * dot(v, n)));
 }

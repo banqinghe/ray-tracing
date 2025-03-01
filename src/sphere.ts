@@ -1,5 +1,6 @@
 import { HitRecord, Hittable } from './hittable';
 import { Interval } from './interval';
+import { Material } from './material';
 import { Point3, Ray } from './ray';
 import { divide, dot, subtract } from './vec3';
 
@@ -7,10 +8,12 @@ export class Sphere implements Hittable {
     type = 'Sphere';
     center: Point3;
     radius: number;
+    material: Material;
 
-    constructor(center: Point3, radius: number) {
+    constructor(center: Point3, radius: number, material: Material) {
         this.center = center;
         this.radius = Math.max(0, radius);
+        this.material = material;
     }
 
     // Ray-sphere intersection
@@ -66,6 +69,7 @@ export class Sphere implements Hittable {
         record.p = ray.at(record.t);
         const outwardNormal = divide(subtract(record.p, this.center), this.radius);
         record.setFaceNormal(ray, outwardNormal);
+        record.material = this.material;
 
         return true;
     }

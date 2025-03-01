@@ -1,7 +1,9 @@
 /// <reference lib="webworker" />
 
 import { Camera, CameraConfig } from './camera';
+import { Color } from './color';
 import { HittableList } from './hittable-list';
+import { Material } from './material';
 import { Point3 } from './ray';
 import { SceneConfig } from './scene';
 import { Sphere } from './sphere';
@@ -17,7 +19,11 @@ self.onmessage = function (event: MessageEvent<WorkerMessageData>) {
     const world = new HittableList();
     for (const shape of scene) {
         if (shape.type === 'sphere') {
-            world.add(new Sphere(new Point3(...shape.center), shape.radius));
+            world.add(new Sphere(
+                new Point3(...shape.center),
+                shape.radius,
+                Material.create(shape.material, new Color(...shape.color)),
+            ));
         }
     }
 

@@ -1,6 +1,6 @@
 import { HitRecord, Hittable } from './hittable';
 import { Point3, Ray } from './ray';
-import { add, multiply, randomOnHemisphere, randomUnitVector, subtract, unitVector, Vec3 } from './vec3';
+import { add, multiply, randomUnitVector, subtract, unitVector, Vec3 } from './vec3';
 import { Color, writeColor } from './color';
 import { Interval } from './interval';
 
@@ -122,10 +122,12 @@ export class Camera {
         // to be inside the object, and this beam of light will hit the object again from within, resulting
         // in a darker color at the intersection point than expected.
         if (world.hit(ray, new Interval(0.001, Infinity), hitRecord)) {
-            // const direction = randomOnHemisphere(hitRecord.normal);
-            const direction = hitRecord.normal.add(randomUnitVector());
-            // the original color is the background color, and each hit will cause the color to fade to half of its original value
-            return this.rayColor(new Ray(hitRecord.p, direction), depth - 1, world).multiply(0.5);
+            const scattered = new Ray();
+            const attenuation = new Color();
+            if (hitRecord.material.scatter(ray, hitRecord, attenuation, scattered)) {
+                return multiply(attenuation, this.rayColor(scattered, depth - 1, world));
+            }
+            return new Color(0, 0, 0);
         }
 
         // background

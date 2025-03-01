@@ -34,7 +34,7 @@ export class HittableList extends Hittable {
             if (object.hit(ray, new Interval(interval.min, closestSoFar), tempHitRecord)) {
                 hitAnything = true;
                 closestSoFar = tempHitRecord.t;
-                hitRecord.assign(tempHitRecord);
+                Object.assign(hitRecord, tempHitRecord);
             }
         }
 

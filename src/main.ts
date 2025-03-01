@@ -32,8 +32,38 @@ function main() {
     };
 
     const sceneConfig: SceneConfig = [
-        { type: 'sphere', center: [0, 0, -1], radius: 0.5 },
-        { type: 'sphere', center: [0, -100.5, -1], radius: 100 },
+        // ground
+        {
+            type: 'sphere',
+            center: [0, -100.5, -1],
+            radius: 100,
+            material: 'lambertian',
+            color: [0.8, 0.8, 0.0],
+        },
+        // center sphere
+        {
+            type: 'sphere',
+            center: [0, 0, -1.2],
+            radius: 0.5,
+            material: 'lambertian',
+            color: [0.1, 0.2, 0.5],
+        },
+        // left sphere
+        {
+            type: 'sphere',
+            center: [1, 0, -1],
+            radius: 0.5,
+            material: 'metal',
+            color: [0.8, 0.8, 0.8],
+        },
+        // right sphere
+        {
+            type: 'sphere',
+            center: [-1, 0, -1],
+            radius: 0.5,
+            material: 'metal',
+            color: [0.8, 0.6, 0.2],
+        },
     ];
 
     render(cameraConfig, sceneConfig);

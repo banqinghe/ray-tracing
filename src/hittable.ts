@@ -1,6 +1,7 @@
 import { dot, Vec3 } from './vec3';
 import { Point3, Ray } from './ray';
 import { Interval } from './interval';
+import { Material } from './material';
 
 export class HitRecord {
     p: Point3;
@@ -8,6 +9,8 @@ export class HitRecord {
     t: number;
     /** determines whether the ray hits the object from the outside */
     frontFace: boolean;
+    /** material at hit point, assigned upon hitting */
+    material!: Material;
 
     constructor(p?: Point3, normal?: Vec3, t?: number) {
         this.p = p || new Point3();
@@ -25,13 +28,6 @@ export class HitRecord {
         // dot result < 0 means the ray is outside the sphere
         this.frontFace = dot(ray.direction, outwardNormal) < 0;
         this.normal = this.frontFace ? outwardNormal : outwardNormal.negate();
-    }
-
-    assign(record: HitRecord) {
-        this.p = record.p;
-        this.normal = record.normal;
-        this.t = record.t;
-        this.frontFace = record.frontFace;
     }
 }
 

@@ -1,68 +1,50 @@
-import { Canvas } from './Canvas';
-import { Hittable } from './hittable';
-import { Point3 } from './ray';
-import { Vec3 } from './vec3';
-import RenderWorker from './render.worker?worker';
+import { HitRecord, Hittable } from './hittable';
+import { Point3, Ray } from './ray';
+import { add, multiply, subtract, unitVector, Vec3 } from './vec3';
+import { Color, writeColor } from './color';
+import { Interval } from './interval';
+
+export interface CameraConfig {
+    aspectRadio: number;
+    imageWidth: number;
+    samplesPerPixel: number;
+}
 
 export class Camera {
     /** radio of image width over height */
-    aspectRadio = 1;
+    aspectRadio: number;
 
     /** rendered image width */
-    imageWidth = 100;
+    imageWidth: number;
 
     /** rendered image height */
-    imageHeight!: number;
+    imageHeight: number;
 
     /** count of random samples for each pixel */
-    samplesPerPixel = 10;
+    samplesPerPixel: number;
 
     /** color scale factor for a sum of pixel samples */
-    private pixelSamplesScale!: number;
+    private pixelSamplesScale: number;
 
     /** camera center */
-    private center!: Point3;
+    private center: Point3;
 
     /** location of pixel 0, 0 */
-    private pixel00Location!: Point3;
+    private pixel00Location: Point3;
 
     /** offset to pixel to the right */
-    private pixelDeltaU!: Vec3;
+    private pixelDeltaU: Vec3;
 
     /** offset to pixel below */
-    private pixelDeltaV!: Vec3;
+    private pixelDeltaV: Vec3;
 
-    render(world: Hittable) {
-        this.initialize();
-
-        const canvas = new Canvas('#output', this.imageWidth, this.imageHeight);
-
-        const renderWorker = new RenderWorker();
-        renderWorker.postMessage({
-            center: this.center,
-            imageHeight: this.imageHeight,
-            imageWidth: this.imageWidth,
-            pixel00Location: this.pixel00Location,
-            pixelDeltaU: this.pixelDeltaU,
-            pixelDeltaV: this.pixelDeltaV,
-            pixelSamplesScale: this.pixelSamplesScale,
-            samplesPerPixel: this.samplesPerPixel,
-            world,
-        });
-
-        // 接收从 Worker 返回的处理过的 ImageData
-        renderWorker.onmessage = (event: MessageEvent<{ imageBitmap: ImageBitmap }>) => {
-            const { imageBitmap } = event.data;
-            canvas.ctx.drawImage(imageBitmap, 0, 0);
-        };
-    }
-
-    private initialize() {
-        // calculate the image height, and ensure that it's at least 1
-        // (imageWidth and imageHeight are both integers, as in the C++ code, so we need to use Math.max)
-        this.imageHeight = Math.max(this.imageWidth / this.aspectRadio, 1);
-
-        this.pixelSamplesScale = 1 / this.samplesPerPixel;
+    constructor(config: CameraConfig & { imageHeight: number }) {
+        const { imageWidth, imageHeight, aspectRadio, samplesPerPixel } = config;
+        this.imageWidth = imageWidth;
+        this.imageHeight = imageHeight;
+        this.aspectRadio = aspectRadio;
+        this.samplesPerPixel = samplesPerPixel;
+        this.pixelSamplesScale = 1 / samplesPerPixel;
 
         this.center = new Point3(0, 0, 0);
 
@@ -88,5 +70,64 @@ export class Camera {
         this.pixel00Location = viewportUpperLeft.add(
             this.pixelDeltaU.add(this.pixelDeltaV).multiply(0.5),
         );
+    }
+
+    render(world: Hittable) {
+        const offscreenCanvas = new OffscreenCanvas(this.imageWidth, this.imageHeight);
+        const ctx = offscreenCanvas.getContext('2d')!;
+        const imageData = new ImageData(this.imageWidth, this.imageHeight);
+
+        for (let j = 0; j < this.imageHeight; j++) {
+            for (let i = 0; i < this.imageWidth; i++) {
+                let pixelColor = new Color(0, 0, 0);
+
+                for (let sample = 0; sample < this.samplesPerPixel; sample++) {
+                    const ray = this.getRay(i, j);
+                    pixelColor = add(pixelColor, this.rayColor(ray, world));
+                }
+
+                writeColor({
+                    i,
+                    j,
+                    pixelColor: multiply(pixelColor, this.pixelSamplesScale),
+                    imageData: imageData,
+                    imageWidth: this.imageWidth,
+                });
+            }
+
+            // paint offscreen canvas
+            ctx.putImageData(imageData, 0, 0);
+            // transform OffscreenCanvas to ImageBitmap and send to main thread
+            const imageBitmap = offscreenCanvas.transferToImageBitmap();
+            self.postMessage({ imageBitmap }, [imageBitmap]);
+        }
+    }
+
+    rayColor(ray: Ray, world: Hittable): Color {
+        const hitRecord = new HitRecord();
+
+        if (world.hit(ray, new Interval(0, Infinity), hitRecord)) {
+            return add(hitRecord.normal, new Color(1, 1, 1)).multiply(0.5);
+        }
+
+        // background
+        const unitDirection = unitVector(ray.direction);
+        const a = 0.5 * (unitDirection.y + 1);
+        return new Color(1, 1, 1).multiply(1 - a)
+            .add(new Color(0.5, 0.7, 1).multiply(a));
+    };
+
+    sampleSquare(): Vec3 {
+        return new Vec3(Math.random() - 0.5, Math.random() - 0.5, 0);
+    }
+
+    getRay(i: number, j: number): Ray {
+        const offset = this.sampleSquare();
+        const pixelSample = this.pixel00Location
+            .add(multiply(this.pixelDeltaU, i + offset.x))
+            .add(multiply(this.pixelDeltaV, j + offset.y));
+        const rayOrigin = this.center;
+        const rayDirection = subtract(pixelSample, rayOrigin);
+        return new Ray(rayOrigin, rayDirection);
     }
 }

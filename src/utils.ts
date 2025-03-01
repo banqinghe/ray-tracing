@@ -1,11 +1,3 @@
-/**
- * `PlainObject<T>` creates a type by excluding function properties from `T`,
- * retaining only non-function properties
- */
-export type PlainObject<T> = {
-    [K in keyof T as T[K] extends Function ? never : K]: T[K];
-};
-
 export function degreesToRadians(degrees: number): number {
     return degrees * (Math.PI / 180);
 }

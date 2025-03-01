@@ -1,7 +1,6 @@
 import { HitRecord, Hittable } from './hittable';
 import { Interval } from './interval';
 import { Point3, Ray } from './ray';
-import { PlainObject } from './utils';
 import { divide, dot, subtract } from './vec3';
 
 export class Sphere implements Hittable {
@@ -69,12 +68,5 @@ export class Sphere implements Hittable {
         record.setFaceNormal(ray, outwardNormal);
 
         return true;
-    }
-
-    static fromPlainObject(object: PlainObject<Sphere>) {
-        return new Sphere(
-            new Point3(object.center.e[0], object.center.e[1], object.center.e[2]),
-            object.radius,
-        );
     }
 }
